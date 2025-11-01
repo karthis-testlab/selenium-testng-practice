@@ -1,0 +1,10 @@
+.classpath
+.project
+.settings/
+target/
+test-output/
+cucumber-reports/
+chainlp/
+reports/
+result.json
+screenshots/
