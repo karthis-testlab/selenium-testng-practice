@@ -1,4 +1,4 @@
-package com.testng.isteners.practices;
+package com.testng.listeners.practices;
 
 import java.io.File;
 import java.io.IOException;
@@ -8,6 +8,8 @@ import java.util.Date;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.io.FileHandler;
+import org.testng.ISuite;
+import org.testng.ISuiteListener;
 import org.testng.ITestContext;
 import org.testng.ITestListener;
 import org.testng.ITestResult;
@@ -19,13 +21,14 @@ import com.aventstack.extentreports.reporter.ExtentSparkReporter;
 import com.aventstack.extentreports.reporter.configuration.Theme;
 import com.saucedemo.test.practices.InventoryTest;
 
-public class ExtentReportListener implements ITestListener {
+public class ExtentReportListenerV1 implements ISuiteListener, ITestListener {
 
 	private static ExtentSparkReporter sparkReporter;
 	private static ExtentReports extentReports;
-	private static ThreadLocal<ExtentTest> test = new ThreadLocal<>();	    
+	private static ThreadLocal<ExtentTest> testSuite = new ThreadLocal<>();
+	private static ThreadLocal<ExtentTest> testCase = new ThreadLocal<>();
 
-	public void onStart(ITestContext context) {
+	public void onStart(ISuite suite) {
 		sparkReporter = new ExtentSparkReporter(System.getProperty("user.dir") + "/reports/result.html");
 
 		sparkReporter.config().setDocumentTitle("Selenium Automation Report");
@@ -40,20 +43,24 @@ public class ExtentReportListener implements ITestListener {
 		extentReports.setSystemInfo("Tester Name: ", "DigitalFactory24 QA Team");
 		extentReports.setSystemInfo("OS Name: ", "Windows 11 Home Single Language");
 		extentReports.setSystemInfo("Browser Name: ", "Google Chrome Version 140.0.7339.128 (Official Build) (64-bit)");
-
 	}
 
-	public void onFinish(ITestContext context) {
+	public void onFinish(ISuite suite) {
 		extentReports.flush();
 	}
-	
-	public void onTestStart(ITestResult result) {
-        ExtentTest extentTest = extentReports.createTest(result.getMethod().getMethodName());
-        test.set(extentTest);
-    }
 
-	public void onTestSuccess(ITestResult result) {		
-		test.get().log(Status.PASS, "Test case is PASSED: " + result.getName());
+	public void onStart(ITestContext context) {
+		ExtentTest parent = extentReports.createTest(context.getCurrentXmlTest().getName());
+		testSuite.set(parent);
+	}
+
+	public void onTestStart(ITestResult result) {
+		ExtentTest node = testSuite.get().createNode(result.getName());
+		testCase.set(node);
+	}
+
+	public void onTestSuccess(ITestResult result) {
+		testCase.get().log(Status.PASS, "Test case is PASSED: " + result.getName());
 	}
 
 	public void onTestFailure(ITestResult result) {
@@ -68,7 +75,7 @@ public class ExtentReportListener implements ITestListener {
 				e.printStackTrace();
 			}
 		}
-		test.get().log(Status.FAIL, "Test case is FAILED: " + result.getName());
+		testCase.get().log(Status.FAIL, "Test case is FAILED: " + result.getName());
 	}
 
 }
